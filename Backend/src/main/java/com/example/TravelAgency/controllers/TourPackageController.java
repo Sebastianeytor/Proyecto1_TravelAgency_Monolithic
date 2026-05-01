@@ -14,6 +14,7 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/api/tour-packages")
 @RequiredArgsConstructor
+@CrossOrigin("*")
 public class TourPackageController {
 
     private final TourPackageService tourPackageService;
