@@ -12,7 +12,7 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 
     List<UserEntity> findByFullNameContainingIgnoreCase(String fullName);
 
-    Optional<UserEntity> findByEmail(String email);
+    Optional<UserEntity> findByKeycloakId(String keycloakId);
 
     boolean existsByEmail(String email);
 

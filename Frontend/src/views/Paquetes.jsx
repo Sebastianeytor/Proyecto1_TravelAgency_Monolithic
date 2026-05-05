@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import tourPackageService from "../services/tourPackage.service";
 
 const Paquetes = () => {
@@ -43,7 +44,7 @@ const Paquetes = () => {
                                     <p className="card-text text-muted">{p.description}</p>
                                     <div className="mt-auto">
                                         <h4 className="text-success">${p.price}</h4>
-                                        <button className="btn btn-primary w-100">Ver Detalles</button>
+                                        <Link to={`/paquete/${p.id}`} className="btn btn-primary w-100">Ver Detalles</Link>
                                     </div>
                                 </div>
                             </div>

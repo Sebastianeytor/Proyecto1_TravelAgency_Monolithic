@@ -1,5 +1,6 @@
 package com.example.TravelAgency.controllers;
 
+import org.springframework.security.access.prepost.PreAuthorize; // Importación obligatoria
 import com.example.TravelAgency.entities.PaymentEntity;
 import com.example.TravelAgency.services.PaymentService;
 import lombok.Data;
@@ -28,7 +29,10 @@ public class PaymentController {
         private String cvv;
     }
 
+    // 🔵 CLIENTE: Exigimos que quien pague sea un usuario registrado en Keycloak con rol de cliente.
+    // Nadie anónimo puede inyectar pagos al sistema.
     @PostMapping("/process")
+    @PreAuthorize("hasRole('CLIENT')")
     public ResponseEntity<?> processPayment(@RequestBody PaymentRequest request) {
         try {
             //Enviamos los datos extraídos

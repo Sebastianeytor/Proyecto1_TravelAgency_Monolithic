@@ -1,5 +1,6 @@
 package com.example.TravelAgency.controllers;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import com.example.TravelAgency.Enums.PackageStatus;
 import com.example.TravelAgency.entities.TourPackageEntity;
 import com.example.TravelAgency.services.TourPackageService;
@@ -25,7 +26,9 @@ public class TourPackageController {
         return new ResponseEntity<>(packages, HttpStatus.OK);
     }
 
+    // 🔴 ADMIN: Solo el administrador puede crear paquetes
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> createPackage(@RequestBody TourPackageEntity newPackage) {
         try {
             TourPackageEntity createdPackage = tourPackageService.createPackage(newPackage);
@@ -58,7 +61,9 @@ public class TourPackageController {
         }
     }
 
+    // 🔴 ADMIN: Solo el administrador puede cambiar el estado de un paquete
     @PatchMapping("/{id}/status")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> changePackageStatus(@PathVariable Long id, @RequestParam PackageStatus newStatus) {
         try {
             tourPackageService.changePackageStatus(id, newStatus);

@@ -16,10 +16,12 @@ public class UserService {
 
     private final UserRepository userRepository;
 
-    private static final int MAX_FAILED_ATTEMPTS = 3;
-
     public Optional<UserEntity> getUserById(Long id) {
         return userRepository.findById(id);
+    }
+
+    public Optional<UserEntity> getUserByKeycloakId(String keycloakId) {
+        return userRepository.findByKeycloakId(keycloakId);
     }
 
     public List<UserEntity> getAllUsers() {
@@ -35,39 +37,16 @@ public class UserService {
             throw new IllegalArgumentException("El correo electrónico ya está registrado en el sistema.");
         }
 
+        // Validamos que el puente con Keycloak venga asegurado
+        if (newUser.getKeycloakId() == null || newUser.getKeycloakId().isEmpty()) {
+            throw new IllegalArgumentException("El ID de Keycloak es obligatorio para registrar un usuario.");
+        }
+
         newUser.setRole(UserRole.CLIENT);
         newUser.setStatus(UserStatus.ACTIVE);
-        newUser.setFailedLoginAttempts(0);
+        // Ya no seteamos los intentos fallidos porque Keycloak se encarga de eso
 
         return userRepository.save(newUser);
-    }
-
-    public void registerFailedLogin(String email) {
-        Optional<UserEntity> userOptional = userRepository.findByEmail(email);
-
-        if (userOptional.isPresent()) {
-            UserEntity user = userOptional.get();
-
-            if (user.getStatus() != UserStatus.ACTIVE) {
-                return;
-            }
-
-            int attempts = user.getFailedLoginAttempts() + 1;
-            user.setFailedLoginAttempts(attempts);
-
-            if (attempts >= MAX_FAILED_ATTEMPTS) {
-                user.setStatus(UserStatus.BLOCKED);
-            }
-
-            userRepository.save(user);
-        }
-    }
-
-    public void resetFailedAttempts(String email) {
-        userRepository.findByEmail(email).ifPresent(user -> {
-            user.setFailedLoginAttempts(0);
-            userRepository.save(user);
-        });
     }
 
     public UserEntity updateUser(Long id, UserEntity updatedData) {
@@ -75,8 +54,12 @@ public class UserService {
         UserEntity existingUser = userRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado con ID: " + id));
 
-        // 2. Solo actualizamos campos "seguros" que el usuario puede cambiar en su perfil
+        // 2. Actualizamos los campos de contacto y perfil que el usuario tiene permitido cambiar
         if (updatedData.getFullName() != null) existingUser.setFullName(updatedData.getFullName());
+        if (updatedData.getRut() != null) existingUser.setRut(updatedData.getRut());
+        if (updatedData.getPhone() != null) existingUser.setPhone(updatedData.getPhone());
+        if (updatedData.getNationality() != null) existingUser.setNationality(updatedData.getNationality());
+
         if (updatedData.getEmail() != null) {
             // Validar que el nuevo email no lo tenga otro usuario
             if (!existingUser.getEmail().equals(updatedData.getEmail()) &&
@@ -86,8 +69,8 @@ public class UserService {
             existingUser.setEmail(updatedData.getEmail());
         }
 
-        // Los campos críticos (Role, Status, Password, Intentos) NO se tocan aquí
-        // para evitar que alguien se auto-promueva a ADMIN desde el frontend.
+        // Los campos críticos (Role, Status y keycloakId) NO se tocan aquí
+        // para mantener la seguridad de la arquitectura intacta.
 
         return userRepository.save(existingUser);
     }
@@ -99,5 +82,4 @@ public class UserService {
         user.setStatus(UserStatus.INACTIVE);
         userRepository.save(user);
     }
-
 }

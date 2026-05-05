@@ -1,5 +1,6 @@
 package com.example.TravelAgency.controllers;
 
+import org.springframework.security.access.prepost.PreAuthorize; // Importamos la seguridad
 import com.example.TravelAgency.entities.ReservationEntity;
 import com.example.TravelAgency.services.ReservationSrvice;
 import lombok.Data;
@@ -19,7 +20,7 @@ public class ReservationController {
 
     private final ReservationSrvice reservationService;
 
-    //Resivimos solo 3 datos
+    // Recibimos solo 3 datos
     @Data
     public static class ReservationRequest {
         private Long userId;
@@ -27,7 +28,9 @@ public class ReservationController {
         private Integer passengers;
     }
 
+    // 🔵 CLIENTE: Solo alguien con cuenta puede reservar un viaje.
     @PostMapping
+    @PreAuthorize("hasRole('CLIENT')")
     public ResponseEntity<?> createReservation(@RequestBody ReservationRequest request) {
         try {
             // Le pasamos los 3 datos
@@ -42,7 +45,9 @@ public class ReservationController {
         }
     }
 
+    // 🟣 CLIENTE y ADMIN: El cliente necesita ver su boleta/comprobante, y el admin podría necesitar revisarla.
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('CLIENT', 'ADMIN')")
     public ResponseEntity<?> getReservationById(@PathVariable Long id) {
         Optional<ReservationEntity> reservation = reservationService.getReservationById(id);
 
@@ -53,12 +58,11 @@ public class ReservationController {
         }
     }
 
+    // 🟣 CLIENTE y ADMIN: El cliente ve su propio historial, el admin puede buscar el historial de alguien en particular.
     @GetMapping("/user/{userId}")
+    @PreAuthorize("hasAnyRole('CLIENT', 'ADMIN')")
     public ResponseEntity<List<ReservationEntity>> getReservationsByUser(@PathVariable Long userId) {
         List<ReservationEntity> reservations = reservationService.getReservationsByUserId(userId);
         return new ResponseEntity<>(reservations, HttpStatus.OK);
-
-
     }
-
 }

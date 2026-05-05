@@ -21,6 +21,9 @@ public class UserEntity {
     @Column(unique = true, nullable = false)
     private Long id;
 
+    @Column(unique = true, nullable = false)
+    private String keycloakId;
+
     @Column(length = 20, nullable = false, unique = true)
     private String rut;
 
@@ -33,15 +36,8 @@ public class UserEntity {
     @Column(length = 50, nullable = false, unique = true)
     private String email;
 
-    @Column(length = 30, nullable = false)
-    private String password;
-
-   @Column (length = 12)
-   private String phone;
-
-    @Column(nullable = false)
-    @Builder.Default
-    private Integer failedLoginAttempts = 0;
+    @Column (length = 12)
+    private String phone;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -50,5 +46,4 @@ public class UserEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private UserStatus status;
-
 }

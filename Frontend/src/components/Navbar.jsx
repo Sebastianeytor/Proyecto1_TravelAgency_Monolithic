@@ -1,8 +1,20 @@
 import { Link } from "react-router-dom";
+import { useKeycloak } from "@react-keycloak/web";
 
 const Navbar = () => {
-  const isLoggedIn = false; 
-  const isAdmin = false;    
+  // Extraemos keycloak y la variable que nos avisa si ya terminó de cargar
+  const { keycloak, initialized } = useKeycloak();
+
+  // 1. Si Keycloak está pensando, no mostramos nada aún (evita la pantalla en blanco)
+  if (!initialized) {
+    return null; 
+  }
+
+  // 2. Recreamos tus variables para que el resto del código no explote
+  const isLoggedIn = keycloak.authenticated;
+  // Verificamos si está logueado Y además tiene el rol ADMIN que creamos
+  const isAdmin = keycloak.authenticated && keycloak.hasRealmRole('ADMIN');
+   
 
   // Esta función simula un clic en el botón de la "X" para cerrar el menú
   // permitiendo que React Router haga su trabajo de navegación sin interrupciones.
@@ -30,15 +42,21 @@ const Navbar = () => {
               <li className="nav-item me-3">
                 <Link className="nav-link px-2" to="/carrito">🛒 Carrito</Link>
               </li>
-              <li className="nav-item">
+             <li className="nav-item">
                 {isLoggedIn ? (
-                  <button className="btn btn-outline-danger d-flex align-items-center btn-sm py-2">
+                  <button 
+                    className="btn btn-outline-danger d-flex align-items-center btn-sm py-2"
+                    onClick={() => keycloak.logout()}
+                  >
                     <span className="me-2">🚪</span> Cerrar sesión
                   </button>
                 ) : (
-                  <Link className="btn btn-outline-light d-flex align-items-center btn-sm py-2" to="/login">
+                  <button 
+                    className="btn btn-outline-light d-flex align-items-center btn-sm py-2" 
+                    onClick={() => keycloak.login()}
+                  >
                     <span className="me-2">👤</span> Iniciar sesión
-                  </Link>
+                  </button>
                 )}
               </li>
             </ul>

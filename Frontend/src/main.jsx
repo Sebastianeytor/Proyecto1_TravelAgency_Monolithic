@@ -1,11 +1,13 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import 'bootstrap/dist/css/bootstrap.min.css';
-import 'bootstrap/dist/js/bootstrap.bundle.min.js'; // <- Agrega esta línea mágica
+import React from 'react'
+import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
+import 'bootstrap/dist/css/bootstrap.min.css'
+import 'bootstrap/dist/js/bootstrap.bundle.min.js'
+import { ReactKeycloakProvider } from '@react-keycloak/web'
+import keycloak from './services/keycloak'
 
-createRoot(document.getElementById('root')).render(
-  <StrictMode>
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <ReactKeycloakProvider authClient={keycloak} initOptions={{ onLoad: 'check-sso' }}>
     <App />
-  </StrictMode>,
+  </ReactKeycloakProvider>,
 )
