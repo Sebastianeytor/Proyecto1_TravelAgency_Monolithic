@@ -1,14 +1,16 @@
 package com.example.TravelAgency.controllers;
 
+import lombok.Builder;
 import org.springframework.security.access.prepost.PreAuthorize; // Importamos la seguridad
 import com.example.TravelAgency.entities.ReservationEntity;
-import com.example.TravelAgency.services.ReservationSrvice;
+import com.example.TravelAgency.services.ReservationService;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -18,7 +20,7 @@ import java.util.Optional;
 @CrossOrigin("*")
 public class ReservationController {
 
-    private final ReservationSrvice reservationService;
+    private final ReservationService reservationService;
 
     // Recibimos solo 3 datos
     @Data
@@ -26,6 +28,16 @@ public class ReservationController {
         private Long userId;
         private Long packageId;
         private Integer passengers;
+    }
+
+    // 📦 El "Sobre" que le enviaremos a React con la cotización
+    @Data
+    @Builder
+    public static class ReservationPreviewResponse {
+        private BigDecimal basePrice;
+        private BigDecimal discountAmount;
+        private BigDecimal finalAmount;
+        private String appliedDiscounts; // Ej: "Descuento por Grupo (10%), Cliente Frecuente (5%)"
     }
 
     // 🔵 CLIENTE: Solo alguien con cuenta puede reservar un viaje.
@@ -40,6 +52,22 @@ public class ReservationController {
                     request.getPassengers()
             );
             return new ResponseEntity<>(newReservation, HttpStatus.CREATED);
+        } catch (IllegalArgumentException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    // 🔵 CLIENTE: Cotizar antes de comprar (Requisito Épica 4)
+    @PostMapping("/preview")
+    @PreAuthorize("hasRole('CLIENT')")
+    public ResponseEntity<?> previewReservation(@RequestBody ReservationRequest request) {
+        try {
+            ReservationPreviewResponse preview = reservationService.previewReservation(
+                    request.getUserId(),
+                    request.getPackageId(),
+                    request.getPassengers()
+            );
+            return new ResponseEntity<>(preview, HttpStatus.OK);
         } catch (IllegalArgumentException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         }

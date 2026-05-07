@@ -3,6 +3,7 @@ package com.example.TravelAgency.services;
 import com.example.TravelAgency.Enums.PackageStatus;
 import com.example.TravelAgency.Enums.ReservationStatus;
 import com.example.TravelAgency.Enums.UserStatus;
+import com.example.TravelAgency.controllers.ReservationController;
 import com.example.TravelAgency.entities.ReservationEntity;
 import com.example.TravelAgency.entities.TourPackageEntity;
 import com.example.TravelAgency.entities.UserEntity;
@@ -22,7 +23,7 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-public class ReservationSrvice {
+public class ReservationService {
 
     private final ReservationRepository reservationRepository;
     private final TourPackageRepository tourPackageRepository;
@@ -43,6 +44,67 @@ public class ReservationSrvice {
 
     public List<ReservationEntity> getReservationsByUserId(Long userId) {
         return reservationRepository.findByUserId(userId);
+    }
+
+    // =========================================================
+    // MOTOR DE COTIZACIÓN (Preview sin guardar en BD)
+    // =========================================================
+    public ReservationController.ReservationPreviewResponse previewReservation(Long userId, Long packageId, Integer passengers) {
+
+        // 1. Validaciones básicas
+        if (passengers == null || passengers <= 0) {
+            throw new IllegalArgumentException("La cantidad de pasajeros debe ser mayor a cero.");
+        }
+
+        TourPackageEntity tourPackage = tourPackageRepository.findById(packageId)
+                .orElseThrow(() -> new IllegalArgumentException("Paquete turístico no encontrado."));
+
+        if (tourPackage.getStatus() != PackageStatus.AVAILABLE) {
+            throw new IllegalArgumentException("El paquete no está disponible para reservas.");
+        }
+        if (passengers > tourPackage.getAvailableQuotas()) {
+            throw new IllegalArgumentException("No hay suficientes cupos disponibles (" + tourPackage.getAvailableQuotas() + " restantes).");
+        }
+
+        // 2. Cálculo Base
+        BigDecimal basePrice = tourPackage.getPrice().multiply(new BigDecimal(passengers));
+        BigDecimal totalDiscountPercentage = BigDecimal.ZERO;
+        List<String> discountDetails = new ArrayList<>();
+
+        // 3. Reglas Comerciales (Descuentos)
+        if (passengers >= GROUP_MIN_PASSENGERS) {
+            totalDiscountPercentage = totalDiscountPercentage.add(GROUP_DISCOUNT_RATE);
+            discountDetails.add("Descuento por Grupo (" + (GROUP_DISCOUNT_RATE.multiply(new BigDecimal("100")).intValue()) + "%)");
+        }
+
+        long confirmedReservationsCount = reservationRepository.findByUserId(userId).stream()
+                .filter(r -> r.getStatus() == ReservationStatus.CONFIRMED)
+                .count();
+
+        if (confirmedReservationsCount >= FREQUENT_CLIENT_MIN_RESERVATIONS) {
+            totalDiscountPercentage = totalDiscountPercentage.add(FREQUENT_CLIENT_DISCOUNT_RATE);
+            discountDetails.add("Cliente Frecuente (" + (FREQUENT_CLIENT_DISCOUNT_RATE.multiply(new BigDecimal("100")).intValue()) + "%)");
+        }
+
+        if (totalDiscountPercentage.compareTo(MAX_DISCOUNT_PERCENTAGE) > 0) {
+            totalDiscountPercentage = MAX_DISCOUNT_PERCENTAGE;
+            discountDetails.add("Tope Máximo de Descuento (20%)");
+        }
+
+        // 4. Matemáticas Finales
+        BigDecimal discountAmount = basePrice.multiply(totalDiscountPercentage).setScale(0, RoundingMode.HALF_UP);
+        BigDecimal finalAmount = basePrice.subtract(discountAmount).setScale(0, RoundingMode.HALF_UP);
+
+        // Si no hubo descuentos, mandamos un mensaje claro
+        String appliedDiscountsStr = discountDetails.isEmpty() ? "Sin descuentos aplicables" : String.join(" + ", discountDetails);
+
+        // 5. Devolvemos el sobre cerrado sin tocar la base de datos
+        return ReservationController.ReservationPreviewResponse.builder()
+                .basePrice(basePrice)
+                .discountAmount(discountAmount)
+                .finalAmount(finalAmount)
+                .appliedDiscounts(appliedDiscountsStr)
+                .build();
     }
 
     @Transactional
@@ -116,7 +178,7 @@ public class ReservationSrvice {
                 .reservationDate(LocalDateTime.now()) // Fecha y hora exacta actual
                 .totalAmount(finalAmount)
                 .appliedDiscounts(String.join(", ", discountDetails)) // Guardar transparencia de descuentos
-                .status(ReservationStatus.PENDING_PAYMENT)
+                .status(ReservationStatus.CONFIRMED)
                 .build();
 
         return reservationRepository.save(reservation);

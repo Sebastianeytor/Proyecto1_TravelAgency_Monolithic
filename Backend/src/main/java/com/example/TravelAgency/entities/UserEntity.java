@@ -24,7 +24,7 @@ public class UserEntity {
     @Column(unique = true, nullable = false)
     private String keycloakId;
 
-    @Column(length = 20, nullable = false, unique = true)
+    @Column(length = 20, unique = true)
     private String rut;
 
     @Column(length = 200, nullable = false)

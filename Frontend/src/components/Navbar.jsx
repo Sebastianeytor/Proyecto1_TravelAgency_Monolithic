@@ -1,23 +1,21 @@
 import { Link } from "react-router-dom";
 import { useKeycloak } from "@react-keycloak/web";
+import { useContext } from "react"; // 1. Importamos el hook useContext
+import { CartContext } from "../context/CartContext"; // 2. Importamos nuestro Contexto
 
 const Navbar = () => {
-  // Extraemos keycloak y la variable que nos avisa si ya terminó de cargar
   const { keycloak, initialized } = useKeycloak();
+  
+  // 3. Extraemos el carrito de nuestra "burbuja" global
+  const { cart } = useContext(CartContext);
 
-  // 1. Si Keycloak está pensando, no mostramos nada aún (evita la pantalla en blanco)
   if (!initialized) {
     return null; 
   }
 
-  // 2. Recreamos tus variables para que el resto del código no explote
   const isLoggedIn = keycloak.authenticated;
-  // Verificamos si está logueado Y además tiene el rol ADMIN que creamos
   const isAdmin = keycloak.authenticated && keycloak.hasRealmRole('ADMIN');
    
-
-  // Esta función simula un clic en el botón de la "X" para cerrar el menú
-  // permitiendo que React Router haga su trabajo de navegación sin interrupciones.
   const cerrarMenu = () => {
     const btnCerrar = document.querySelector('.btn-close-white');
     if (btnCerrar) {
@@ -27,7 +25,7 @@ const Navbar = () => {
 
   return (
     <>
-      {/* BARRA SUPERIOR (Intacta) */}
+      {/* BARRA SUPERIOR */}
       <nav className="navbar navbar-expand navbar-dark bg-dark mb-4 shadow-sm">
         <div className="container">
           <div className="d-flex align-items-center">
@@ -39,23 +37,35 @@ const Navbar = () => {
           
           <div className="d-flex align-items-center">
             <ul className="navbar-nav flex-row align-items-center">
+              
+              {/* BOTÓN DEL CARRITO CON CONTADOR */}
               <li className="nav-item me-3">
-                <Link className="nav-link px-2" to="/carrito">🛒 Carrito</Link>
+                <Link className="nav-link px-2 d-flex align-items-center" to="/carrito">
+                  <span className="fs-5 me-1">🛒</span> 
+                  <span className="d-none d-sm-inline">Carrito</span>
+                  {/* Si hay paquetes en el carrito, mostramos la burbuja roja */}
+                  {cart.length > 0 && (
+                    <span className="badge rounded-pill bg-danger ms-2">
+                      {cart.length}
+                    </span>
+                  )}
+                </Link>
               </li>
-             <li className="nav-item">
+
+              <li className="nav-item">
                 {isLoggedIn ? (
                   <button 
                     className="btn btn-outline-danger d-flex align-items-center btn-sm py-2"
                     onClick={() => keycloak.logout()}
                   >
-                    <span className="me-2">🚪</span> Cerrar sesión
+                    <span className="me-2">👤</span> <span className="d-none d-sm-inline">Cerrar sesión</span>
                   </button>
                 ) : (
                   <button 
                     className="btn btn-outline-light d-flex align-items-center btn-sm py-2" 
                     onClick={() => keycloak.login()}
                   >
-                    <span className="me-2">👤</span> Iniciar sesión
+                    <span className="me-2">👤</span> <span className="d-none d-sm-inline">Iniciar sesión</span>
                   </button>
                 )}
               </li>
@@ -68,14 +78,12 @@ const Navbar = () => {
       <div className="offcanvas offcanvas-start" tabIndex="-1" id="menuLateral">
         <div className="offcanvas-header bg-dark text-white">
           <h5 className="offcanvas-title">🌍 Explorar</h5>
-          {/* Este es el botón "X" que nuestra función buscará para cerrar el menú */}
           <button type="button" className="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
         </div>
         
         <div className="offcanvas-body p-0 d-flex flex-column">
           <div className="list-group list-group-flush mt-2 flex-grow-1">
             
-            {/* Quitamos el data-bs-dismiss y agregamos nuestro propio onClick */}
             <Link to="/paquetes" className="list-group-item list-group-item-action border-0 fs-5 py-3" onClick={cerrarMenu}>
               🏖️ Paquetes Turísticos
             </Link>

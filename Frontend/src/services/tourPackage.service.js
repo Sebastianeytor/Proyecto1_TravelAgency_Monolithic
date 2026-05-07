@@ -1,14 +1,28 @@
-import httpClient from "./http-common";
+import httpClient from "./http-common"; 
 
-// Obtener todos los paquetes
+// 🔴 ADMIN: Trae todos los paquetes (activos, suspendidos, etc.)
 const getAll = () => {
     return httpClient.get('/tour-packages'); 
 }
 
-// NUEVO: Obtener un paquete específico por su ID
+// 🟢 CLIENTE/PÚBLICO: Trae solo los paquetes con estado "AVAILABLE"
+const getAvailable = () => {
+    return httpClient.get('/tour-packages/available');
+};
+
+// Búsqueda por destino directamente en la BD (Para un buscador global)
+const searchByDestination = (destination) => {
+    return httpClient.get(`/tour-packages/search?destination=${destination}`);
+};
+
+// Obtener un paquete específico por su ID
 const getById = (id) => {
     return httpClient.get(`/tour-packages/${id}`);
 }
 
-// Asegúrate de exportar ambas funciones
-export default { getAll, getById };
+export default { 
+    getAll, 
+    getAvailable, 
+    searchByDestination, 
+    getById 
+};
