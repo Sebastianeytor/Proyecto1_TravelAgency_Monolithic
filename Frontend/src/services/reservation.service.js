@@ -15,4 +15,7 @@ const getByUserId = (userId) => {
     return httpClient.get(`/reservations/user/${userId}`);
 };
 
-export default { getPreview, create, getByUserId };
+const previewCart = (data) => httpClient.post("/reservations/cart/preview", data);
+const checkoutCart = (data) => httpClient.post("/reservations/cart/checkout", data);
+
+export default { getPreview, create, getByUserId, previewCart, checkoutCart };

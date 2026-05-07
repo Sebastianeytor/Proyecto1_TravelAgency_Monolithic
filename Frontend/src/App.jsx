@@ -8,6 +8,7 @@ import MiCuenta from './views/MiCuenta';
 import SobreNosotros from './views/SobreNosotros';
 import ContactoAyuda from './views/ContactoAyuda';
 import Carrito from './views/Carrito';
+import MisPaquetes from './views/MisPaquetes';
 import { CartProvider } from './context/CartContext'; // 1. Importamos el proveedor del carrito
 import './App.css';
 
@@ -45,10 +46,9 @@ function App() {
             
             
             <Route path="/mis-paquetes" element={
-              <div className="mt-4">
-                <h3>📦 Mis Paquetes</h3>
-                <p>En construcción...</p>
-              </div>
+              <PrivateRoute requiredRole="CLIENT">
+                <MisPaquetes />
+              </PrivateRoute>
             } />
             
           </Routes>

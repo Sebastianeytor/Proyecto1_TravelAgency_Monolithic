@@ -40,15 +40,15 @@ const Carrito = () => {
     const obtenerCotizaciones = async () => {
         setLoading(true);
         try {
-            const peticiones = cart.map(item => 
-                reservationService.getPreview({
-                    userId: dbUser.id,
+            const payload = {
+                userId: dbUser.id,
+                items: cart.map(item => ({
                     packageId: item.package.id,
                     passengers: item.passengers
-                })
-            );
-            const respuestas = await Promise.all(peticiones);
-            setPreviews(respuestas.map(r => r.data));
+                }))
+            };
+            const res = await reservationService.previewCart(payload);
+            setPreviews(res.data);
         } catch (err) {
             console.error("Error al cotizar", err);
         } finally {
@@ -56,24 +56,30 @@ const Carrito = () => {
         }
     };
 
-    // 3. Confirmar Reservas Reales (Épica 5)
     const handleFinalizarCompra = async (e) => {
         e.preventDefault();
         try {
-            const reservas = cart.map(item => 
-                reservationService.create({
-                    userId: dbUser.id,
+            // Armamos el payload completo (Paquetes + Tarjeta)
+            const payload = {
+                userId: dbUser.id,
+                items: cart.map(item => ({
                     packageId: item.package.id,
                     passengers: item.passengers
-                })
-            );
-            await Promise.all(reservas);
+                })),
+                cardNumber: paymentData.card,
+                expiryDate: paymentData.expiry,
+                cvv: paymentData.cvv
+            };
+            
+            // Enviamos todo a Java
+            await reservationService.checkoutCart(payload);
             clearCart();
-            setStep(3); // Ir a pantalla de éxito
+            setStep(3); // Ir a pantalla de "¡Pago Exitoso!"
         } catch (err) {
-            alert("Hubo un error al procesar tu reserva: " + err.response?.data);
+            alert("Hubo un error al procesar tu reserva: " + (err.response?.data || "Error de red"));
         }
-    };
+    };  
+
 
     const totalFinal = previews.reduce((acc, curr) => acc + curr.finalAmount, 0);
 
@@ -149,16 +155,37 @@ const Carrito = () => {
                                 <form onSubmit={handleFinalizarCompra}>
                                     <div className="mb-3">
                                         <label className="form-label fw-bold">Número de Tarjeta</label>
-                                        <input type="text" className="form-control" placeholder="XXXX XXXX XXXX XXXX" required />
+                                        <input 
+                                            type="text" 
+                                            className="form-control" 
+                                            placeholder="XXXX XXXX XXXX XXXX" 
+                                            value={paymentData.card}
+                                            onChange={(e) => setPaymentData({...paymentData, card: e.target.value})}
+                                            required 
+                                        />
                                     </div>
                                     <div className="row">
                                         <div className="col-md-6 mb-3">
                                             <label className="form-label fw-bold">Expira (MM/YY)</label>
-                                            <input type="text" className="form-control" placeholder="12/28" required />
+                                            <input 
+                                                type="text" 
+                                                className="form-control" 
+                                                placeholder="12/28" 
+                                                value={paymentData.expiry}
+                                                onChange={(e) => setPaymentData({...paymentData, expiry: e.target.value})}
+                                                required 
+                                            />
                                         </div>
                                         <div className="col-md-6 mb-3">
                                             <label className="form-label fw-bold">CVV</label>
-                                            <input type="text" className="form-control" placeholder="123" required />
+                                            <input 
+                                                type="text" 
+                                                className="form-control" 
+                                                placeholder="123" 
+                                                value={paymentData.cvv}
+                                                onChange={(e) => setPaymentData({...paymentData, cvv: e.target.value})}
+                                                required 
+                                            />
                                         </div>
                                     </div>
                                     <div className="mt-4 d-flex gap-2">

@@ -40,6 +40,21 @@ public class ReservationController {
         private String appliedDiscounts; // Ej: "Descuento por Grupo (10%), Cliente Frecuente (5%)"
     }
 
+    @Data
+    public static class CartItemDto {
+        private Long packageId;
+        private Integer passengers;
+    }
+
+    @Data
+    public static class CartRequest {
+        private Long userId;
+        private List<CartItemDto> items;
+        private String cardNumber;
+        private String expiryDate;
+        private String cvv;
+    }
+
     // 🔵 CLIENTE: Solo alguien con cuenta puede reservar un viaje.
     @PostMapping
     @PreAuthorize("hasRole('CLIENT')")
@@ -49,7 +64,8 @@ public class ReservationController {
             ReservationEntity newReservation = reservationService.createReservation(
                     request.getUserId(),
                     request.getPackageId(),
-                    request.getPassengers()
+                    request.getPassengers(),
+                    false
             );
             return new ResponseEntity<>(newReservation, HttpStatus.CREATED);
         } catch (IllegalArgumentException e) {
@@ -65,7 +81,8 @@ public class ReservationController {
             ReservationPreviewResponse preview = reservationService.previewReservation(
                     request.getUserId(),
                     request.getPackageId(),
-                    request.getPassengers()
+                    request.getPassengers(),
+                    false
             );
             return new ResponseEntity<>(preview, HttpStatus.OK);
         } catch (IllegalArgumentException e) {
@@ -92,5 +109,40 @@ public class ReservationController {
     public ResponseEntity<List<ReservationEntity>> getReservationsByUser(@PathVariable Long userId) {
         List<ReservationEntity> reservations = reservationService.getReservationsByUserId(userId);
         return new ResponseEntity<>(reservations, HttpStatus.OK);
+    }
+
+    // ==========================================
+    // NUEVOS ENDPOINTS BATCH (CARRITO COMPLETO)
+    // ==========================================
+
+    // 🔵 CLIENTE: Cotizar el carrito completo (Detecta múltiples paquetes)
+    @PostMapping("/cart/preview")
+    @PreAuthorize("hasRole('CLIENT')")
+    public ResponseEntity<?> previewCart(@RequestBody CartRequest request) {
+        try {
+            List<ReservationPreviewResponse> previews = reservationService.previewCart(request.getUserId(), request.getItems());
+            return new ResponseEntity<>(previews, HttpStatus.OK);
+        } catch (IllegalArgumentException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    // 🔵 CLIENTE: Comprar el carrito completo en una sola transacción
+    @PostMapping("/cart/checkout")
+    @PreAuthorize("hasRole('CLIENT')")
+    public ResponseEntity<?> checkoutCart(@RequestBody CartRequest request) {
+        try {
+            // Pasamos los 5 datos exactos que ahora pide el ReservationService
+            List<ReservationEntity> reservations = reservationService.checkoutCart(
+                    request.getUserId(),
+                    request.getItems(),
+                    request.getCardNumber(),
+                    request.getExpiryDate(),
+                    request.getCvv()
+            );
+            return new ResponseEntity<>(reservations, HttpStatus.CREATED);
+        } catch (IllegalArgumentException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
     }
 }

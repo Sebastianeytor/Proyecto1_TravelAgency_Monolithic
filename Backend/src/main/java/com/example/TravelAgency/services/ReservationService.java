@@ -28,6 +28,7 @@ public class ReservationService {
     private final ReservationRepository reservationRepository;
     private final TourPackageRepository tourPackageRepository;
     private final UserRepository userRepository;
+    private final PaymentService paymentService;
 
     //Descuento del 20% (maximo)
     private static final BigDecimal MAX_DISCOUNT_PERCENTAGE = new BigDecimal("0.20");
@@ -35,6 +36,8 @@ public class ReservationService {
     private static final BigDecimal GROUP_DISCOUNT_RATE = new BigDecimal("0.10");
     //Descuento del 5% (cliente frecuente)
     private static final BigDecimal FREQUENT_CLIENT_DISCOUNT_RATE = new BigDecimal("0.05");
+    // Descuento del 5% (Múltiples Paquetes)
+    private static final BigDecimal MULTIPLE_PACKAGES_DISCOUNT_RATE = new BigDecimal("0.05");
     private static final int GROUP_MIN_PASSENGERS = 4;
     private static final int FREQUENT_CLIENT_MIN_RESERVATIONS = 3;
 
@@ -49,7 +52,7 @@ public class ReservationService {
     // =========================================================
     // MOTOR DE COTIZACIÓN (Preview sin guardar en BD)
     // =========================================================
-    public ReservationController.ReservationPreviewResponse previewReservation(Long userId, Long packageId, Integer passengers) {
+    public ReservationController.ReservationPreviewResponse previewReservation(Long userId, Long packageId, Integer passengers, boolean isMultiplePackages) {
 
         // 1. Validaciones básicas
         if (passengers == null || passengers <= 0) {
@@ -86,6 +89,12 @@ public class ReservationService {
             discountDetails.add("Cliente Frecuente (" + (FREQUENT_CLIENT_DISCOUNT_RATE.multiply(new BigDecimal("100")).intValue()) + "%)");
         }
 
+        // Descuento por Múltiples Paquetes en la misma sesión
+        if (isMultiplePackages) {
+            totalDiscountPercentage = totalDiscountPercentage.add(MULTIPLE_PACKAGES_DISCOUNT_RATE);
+            discountDetails.add("Múltiples Paquetes (" + (MULTIPLE_PACKAGES_DISCOUNT_RATE.multiply(new BigDecimal("100")).intValue()) + "%)");
+        }
+
         if (totalDiscountPercentage.compareTo(MAX_DISCOUNT_PERCENTAGE) > 0) {
             totalDiscountPercentage = MAX_DISCOUNT_PERCENTAGE;
             discountDetails.add("Tope Máximo de Descuento (20%)");
@@ -108,7 +117,7 @@ public class ReservationService {
     }
 
     @Transactional
-    public ReservationEntity createReservation(Long userId, Long packageId, Integer passengers) {
+    public ReservationEntity createReservation(Long userId, Long packageId, Integer passengers, boolean isMultiplePackages) {
 
         //Validar la cantidad de pasajeros (mayor que 0)
         if (passengers == null || passengers <= 0) {
@@ -153,6 +162,12 @@ public class ReservationService {
             discountDetails.add("Descuento Cliente Frecuente (" + (FREQUENT_CLIENT_DISCOUNT_RATE.multiply(new BigDecimal("100"))) + "%)");
         }
 
+        // Descuento por Múltiples Paquetes en la misma sesión
+        if (isMultiplePackages) {
+            totalDiscountPercentage = totalDiscountPercentage.add(MULTIPLE_PACKAGES_DISCOUNT_RATE);
+            discountDetails.add("Múltiples Paquetes (" + (MULTIPLE_PACKAGES_DISCOUNT_RATE.multiply(new BigDecimal("100")).intValue()) + "%)");
+        }
+
         //Límite máximo de descuento (No superar el 20%)
         if (totalDiscountPercentage.compareTo(MAX_DISCOUNT_PERCENTAGE) > 0) {
             totalDiscountPercentage = MAX_DISCOUNT_PERCENTAGE;
@@ -178,10 +193,51 @@ public class ReservationService {
                 .reservationDate(LocalDateTime.now()) // Fecha y hora exacta actual
                 .totalAmount(finalAmount)
                 .appliedDiscounts(String.join(", ", discountDetails)) // Guardar transparencia de descuentos
-                .status(ReservationStatus.CONFIRMED)
+                .status(ReservationStatus.PENDING_PAYMENT)
                 .build();
 
         return reservationRepository.save(reservation);
+    }
+
+    // =========================================================
+// PROCESAMIENTO BATCH (CARRITO COMPLETO)
+// =========================================================
+
+    public List<ReservationController.ReservationPreviewResponse> previewCart(Long userId, List<ReservationController.CartItemDto> items) {
+        // ¿Lleva más de 1 paquete distinto en el carrito?
+        boolean isMultiple = items.size() > 1;
+
+        List<ReservationController.ReservationPreviewResponse> responses = new ArrayList<>();
+        for (ReservationController.CartItemDto item : items) {
+            // Llamamos a tu método de preview pasándole el booleano
+            responses.add(previewReservation(userId, item.getPackageId(), item.getPassengers(), isMultiple));
+        }
+        return responses;
+    }
+
+    @Transactional
+    public List<ReservationEntity> checkoutCart(Long userId, List<ReservationController.CartItemDto> items, String cardNumber, String expiryDate, String cvv) {
+        boolean isMultiple = items.size() > 1;
+        List<ReservationEntity> confirmedReservations = new ArrayList<>();
+
+        for (ReservationController.CartItemDto item : items) {
+            // 1. Creamos la reserva inicial (Queda guardada como PENDING_PAYMENT y descuenta los cupos)
+            ReservationEntity reservation = createReservation(userId, item.getPackageId(), item.getPassengers(), isMultiple);
+
+            // 2. Llamamos a tu PaymentService brillante para procesar el pago de esta reserva
+            paymentService.processSimulatedPayment(
+                    reservation.getId(),
+                    reservation.getTotalAmount(),
+                    cardNumber,
+                    expiryDate,
+                    cvv
+            );
+
+            // 3. Recuperamos la reserva actualizada de la base de datos (ahora con estado CONFIRMED)
+            confirmedReservations.add(reservationRepository.findById(reservation.getId()).get());
+        }
+
+        return confirmedReservations;
     }
 
 }
