@@ -8,7 +8,7 @@ const MiCuenta = () => {
     const [isEditing, setIsEditing] = useState(false);
     const [mensaje, setMensaje] = useState({ texto: "", tipo: "" });
 
-    // Estado para los campos editables
+    //Estado para los campos editables
     const [formData, setFormData] = useState({
         fullName: "",
         rut: "",
@@ -52,7 +52,7 @@ const MiCuenta = () => {
     const handleUpdate = (e) => {
         e.preventDefault();
         
-        // Combinamos lo que no cambia (id, email, status) con lo nuevo
+        //Combinamos lo que no cambia (id, email, status) con lo nuevo
         const dataParaEnviar = {
             ...usuarioCompleto,
             fullName: formData.fullName,

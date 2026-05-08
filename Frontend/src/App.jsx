@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import PrivateRoute from './components/PrivateRoute';
 import SyncUserSilently from './components/SyncUserSilently';
+import Home from './views/Home';
 import Paquetes from './views/Paquetes';
 import DetallePaquete from './views/DetallePaquete';
 import MiCuenta from './views/MiCuenta';
@@ -9,12 +10,13 @@ import SobreNosotros from './views/SobreNosotros';
 import ContactoAyuda from './views/ContactoAyuda';
 import Carrito from './views/Carrito';
 import MisPaquetes from './views/MisPaquetes';
-import { CartProvider } from './context/CartContext'; // 1. Importamos el proveedor del carrito
+import AdminPanel from './views/AdminPanel';
+import { CartProvider } from './context/CartContext';
 import './App.css';
 
 function App() {
   return (
-    // 2. Envolvemos todo con CartProvider para que el carrito sea accesible en cualquier ruta
+    // Envolvemos todo con CartProvider para que el carrito sea accesible en cualquier ruta
     <CartProvider>
       <BrowserRouter>
         <Navbar />
@@ -22,13 +24,7 @@ function App() {
 
         <div className="container">
           <Routes>
-            {/* Ruta de Inicio */}
-            <Route path="/" element={
-              <div className="text-center mt-5">
-                <h1 className="text-primary">Bienvenido a TravelAgency</h1>
-                <p>Explora y gestiona tus viajes de manera sencilla.</p>
-              </div>
-            } />
+            <Route path="/" element={<Home />} />
             
             <Route path="/paquetes" element={<Paquetes />} />
             <Route path="/paquete/:id" element={<DetallePaquete />} />
@@ -36,7 +32,7 @@ function App() {
             <Route path="/nosotros" element={<SobreNosotros />} />
             <Route path="/contacto" element={<ContactoAyuda />} />
             
-            {/* 3. Ruta del Carrito: protegida para Clientes */}
+            {/* Ruta del Carrito: protegida para Clientes */}
             <Route path="/carrito" element={
               <PrivateRoute requiredRole="CLIENT">
                 <Carrito />
@@ -48,6 +44,12 @@ function App() {
             <Route path="/mis-paquetes" element={
               <PrivateRoute requiredRole="CLIENT">
                 <MisPaquetes />
+              </PrivateRoute>
+            } />
+
+            <Route path="/admin" element={
+              <PrivateRoute requiredRole="ADMIN">
+                <AdminPanel />
               </PrivateRoute>
             } />
             

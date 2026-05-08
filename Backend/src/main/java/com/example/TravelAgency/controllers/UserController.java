@@ -92,10 +92,13 @@ public class UserController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> deactivateUser(@PathVariable Long id) {
         try {
-            userService.deactivateUser(id);
-            return new ResponseEntity<>("Usuario desactivado exitosamente", HttpStatus.OK);
+            // Llamamos a tu método oficial
+            UserEntity updatedUser = userService.deactivateUser(id);
+            return new ResponseEntity<>(updatedUser, HttpStatus.OK);
         } catch (IllegalArgumentException e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+        } catch (Exception e) {
+            return new ResponseEntity<>("Error interno del servidor", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }

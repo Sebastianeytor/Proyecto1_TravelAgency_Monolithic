@@ -38,6 +38,19 @@ public class TourPackageController {
         }
     }
 
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> updatePackage(@PathVariable Long id, @RequestBody TourPackageEntity updatedPackage) {
+        try {
+            TourPackageEntity savedPackage = tourPackageService.updatePackage(id, updatedPackage);
+            return new ResponseEntity<>(savedPackage, HttpStatus.OK);
+        } catch (IllegalArgumentException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+        } catch (Exception e) {
+            return new ResponseEntity<>("Error interno del servidor al actualizar el paquete.", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
     @GetMapping("/available")
     public ResponseEntity<List<TourPackageEntity>> getAvailablePackages() {
         List<TourPackageEntity> packages = tourPackageService.getAllAvailablePackages();

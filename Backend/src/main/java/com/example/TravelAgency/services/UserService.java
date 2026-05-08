@@ -75,11 +75,17 @@ public class UserService {
         return userRepository.save(existingUser);
     }
 
-    public void deactivateUser(Long userId) {
+    public UserEntity deactivateUser(Long userId) {
         UserEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
 
-        user.setStatus(UserStatus.INACTIVE);
-        userRepository.save(user);
+        // Si está activo, lo desactivamos. Si está inactivo, lo activamos.
+        if (user.getStatus() == UserStatus.ACTIVE) {
+            user.setStatus(UserStatus.INACTIVE);
+        } else {
+            user.setStatus(UserStatus.ACTIVE);
+        }
+
+        return userRepository.save(user);
     }
 }

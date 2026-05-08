@@ -4,7 +4,7 @@ import { Navigate } from "react-router-dom";
 const PrivateRoute = ({ children, requiredRole }) => {
     const { keycloak, initialized } = useKeycloak();
 
-    // Mientras Keycloak revisa la sesión, mostramos una carga
+    // Mientras Keycloak revisa la sesión
     if (!initialized) {
         return <div className="text-center mt-5"><h5>Verificando seguridad... 🛡️</h5></div>;
     }

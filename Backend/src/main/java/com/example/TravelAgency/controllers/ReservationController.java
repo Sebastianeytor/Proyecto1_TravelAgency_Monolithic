@@ -1,6 +1,8 @@
 package com.example.TravelAgency.controllers;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.access.prepost.PreAuthorize; // Importamos la seguridad
 import com.example.TravelAgency.entities.ReservationEntity;
 import com.example.TravelAgency.services.ReservationService;
@@ -11,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -55,6 +58,26 @@ public class ReservationController {
         private String cvv;
     }
 
+    @Data
+    @Builder
+    public static class SalesReportDto {
+        private LocalDateTime date;
+        private String clientName;
+        private String packageName;
+        private Integer passengers;
+        private BigDecimal totalAmount;
+        private String status;
+    }
+
+    @Data
+    @AllArgsConstructor
+    public static class PackageRankingDto {
+        private String packageName;
+        private Long totalReservations;
+        private Long totalPassengers;
+        private BigDecimal totalRevenue;
+    }
+
     // 🔵 CLIENTE: Solo alguien con cuenta puede reservar un viaje.
     @PostMapping
     @PreAuthorize("hasRole('CLIENT')")
@@ -90,7 +113,6 @@ public class ReservationController {
         }
     }
 
-    // 🟣 CLIENTE y ADMIN: El cliente necesita ver su boleta/comprobante, y el admin podría necesitar revisarla.
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('CLIENT', 'ADMIN')")
     public ResponseEntity<?> getReservationById(@PathVariable Long id) {
@@ -103,7 +125,7 @@ public class ReservationController {
         }
     }
 
-    // 🟣 CLIENTE y ADMIN: El cliente ve su propio historial, el admin puede buscar el historial de alguien en particular.
+    //Este metodo es para visualizar el historial de un usuario
     @GetMapping("/user/{userId}")
     @PreAuthorize("hasAnyRole('CLIENT', 'ADMIN')")
     public ResponseEntity<List<ReservationEntity>> getReservationsByUser(@PathVariable Long userId) {
@@ -111,11 +133,7 @@ public class ReservationController {
         return new ResponseEntity<>(reservations, HttpStatus.OK);
     }
 
-    // ==========================================
-    // NUEVOS ENDPOINTS BATCH (CARRITO COMPLETO)
-    // ==========================================
-
-    // 🔵 CLIENTE: Cotizar el carrito completo (Detecta múltiples paquetes)
+    //Este metodo es para visualizar el carrito completo
     @PostMapping("/cart/preview")
     @PreAuthorize("hasRole('CLIENT')")
     public ResponseEntity<?> previewCart(@RequestBody CartRequest request) {
@@ -127,7 +145,7 @@ public class ReservationController {
         }
     }
 
-    // 🔵 CLIENTE: Comprar el carrito completo en una sola transacción
+    //Este metodo es para realizar la comprar del Carrito completo en una sola transacción
     @PostMapping("/cart/checkout")
     @PreAuthorize("hasRole('CLIENT')")
     public ResponseEntity<?> checkoutCart(@RequestBody CartRequest request) {
@@ -144,5 +162,23 @@ public class ReservationController {
         } catch (IllegalArgumentException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
+    }
+
+    //Estos metodos son los encargados de mostrar los Reportes
+
+    @GetMapping("/reports/sales")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<SalesReportDto>> getSalesReport(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end) {
+        return ResponseEntity.ok(reservationService.getSalesReport(start, end));
+    }
+
+    @GetMapping("/reports/ranking")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<PackageRankingDto>> getPackageRanking(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end) {
+        return ResponseEntity.ok(reservationService.getPackageRanking(start, end));
     }
 }

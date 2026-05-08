@@ -3,6 +3,7 @@ package com.example.TravelAgency.services;
 import com.example.TravelAgency.Enums.PackageStatus;
 import com.example.TravelAgency.entities.TourPackageEntity;
 import com.example.TravelAgency.repositories.TourPackageRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -39,6 +40,36 @@ public class TourPackageService {
         newPackage.setStatus(PackageStatus.AVAILABLE);
 
         return tourPackageRepository.save(newPackage);
+    }
+
+    @Transactional
+    public TourPackageEntity updatePackage(Long id, TourPackageEntity updatedData) {
+        // 1. Buscamos si el paquete existe
+        TourPackageEntity existingPackage = tourPackageRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Paquete turístico no encontrado."));
+
+        // 2. Actualizamos todos los campos
+        existingPackage.setName(updatedData.getName());
+        existingPackage.setDestination(updatedData.getDestination());
+        existingPackage.setDescription(updatedData.getDescription());
+        existingPackage.setStartDate(updatedData.getStartDate());
+        existingPackage.setEndDate(updatedData.getEndDate());
+        existingPackage.setDuration(updatedData.getDuration());
+        existingPackage.setPrice(updatedData.getPrice());
+        existingPackage.setTotalQuotas(updatedData.getTotalQuotas());
+        existingPackage.setAvailableQuotas(updatedData.getAvailableQuotas());
+        existingPackage.setIncludedServices(updatedData.getIncludedServices());
+        existingPackage.setConditions(updatedData.getConditions());
+
+        // ¡Ojo aquí con la R mayúscula de tu entidad! Lombok suele generar el setter así:
+        existingPackage.setRestrictions(updatedData.getRestrictions());
+
+        existingPackage.setTripType(updatedData.getTripType());
+        existingPackage.setSeason(updatedData.getSeason());
+        existingPackage.setStatus(updatedData.getStatus());
+
+        // 3. Guardamos los cambios en PostgreSQL
+        return tourPackageRepository.save(existingPackage);
     }
 
     public List<TourPackageEntity> getAllAvailablePackages() {

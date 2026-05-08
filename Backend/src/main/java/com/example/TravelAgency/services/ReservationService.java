@@ -20,6 +20,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -238,6 +239,47 @@ public class ReservationService {
         }
 
         return confirmedReservations;
+    }
+
+    public List<ReservationController.SalesReportDto> getSalesReport(LocalDateTime start, LocalDateTime end) {
+        return reservationRepository.findAll().stream()
+                .filter(r -> !r.getStatus().equals(ReservationStatus.CANCELLED))
+                .filter(r -> r.getReservationDate().isAfter(start) && r.getReservationDate().isBefore(end))
+                .map(r -> {
+                    UserEntity user = userRepository.findById(r.getUserId()).orElse(null);
+                    TourPackageEntity pkg = tourPackageRepository.findById(r.getTourPackageId()).orElse(null);
+                    return ReservationController.SalesReportDto.builder()
+                            .date(r.getReservationDate())
+                            .clientName(user != null ? user.getFullName() : "N/A")
+                            .packageName(pkg != null ? pkg.getName() : "N/A")
+                            .passengers(r.getPassengerQuantity())
+                            .totalAmount(r.getTotalAmount())
+                            .status(r.getStatus().toString())
+                            .build();
+                }).toList();
+    }
+
+    public List<ReservationController.PackageRankingDto> getPackageRanking(LocalDateTime start, LocalDateTime end) {
+        // Agrupamos reservas por paquete en el rango de fechas
+        return reservationRepository.findAll().stream()
+                .filter(r -> r.getStatus() == ReservationStatus.CONFIRMED)
+                .filter(r -> r.getReservationDate().isAfter(start) && r.getReservationDate().isBefore(end))
+                .collect(Collectors.groupingBy(ReservationEntity::getTourPackageId))
+                .entrySet().stream()
+                .map(entry -> {
+                    TourPackageEntity pkg = tourPackageRepository.findById(entry.getKey()).orElse(null);
+                    List<ReservationEntity> resList = entry.getValue();
+                    long totalPassengers = resList.stream().mapToLong(ReservationEntity::getPassengerQuantity).sum();
+                    BigDecimal totalRevenue = resList.stream().map(ReservationEntity::getTotalAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+                    return new ReservationController.PackageRankingDto(
+                            pkg != null ? pkg.getName() : "Desconocido",
+                            (long) resList.size(),
+                            totalPassengers,
+                            totalRevenue
+                    );
+                })
+                .sorted((a, b) -> b.getTotalReservations().compareTo(a.getTotalReservations())) // Ordenar de mayor a menor
+                .toList();
     }
 
 }

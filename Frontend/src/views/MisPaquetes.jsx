@@ -20,15 +20,15 @@ const MisPaquetes = () => {
 
     const cargarHistorial = async () => {
         try {
-            // 1. Identificamos al usuario en nuestra BD
+            //Identificamos al usuario en nuestra BD
             const userRes = await userService.getByKeycloakId(keycloak.tokenParsed.sub);
             const userId = userRes.data.id;
 
-            // 2. Buscamos todas sus reservas
+            //Buscamos todas sus reservas
             const reservasRes = await reservationService.getByUserId(userId);
             const historial = reservasRes.data;
 
-            // 3. Magia Frontend: Buscamos el nombre de cada paquete para que se vea bonito
+            //Buscamos el nombre de cada paquete para que se vea bonito
             const reservasEnriquecidas = await Promise.all(historial.map(async (reserva) => {
                 try {
                     const paqueteRes = await tourPackageService.getById(reserva.tourPackageId);
@@ -42,7 +42,7 @@ const MisPaquetes = () => {
                 }
             }));
 
-            // Ordenamos para que las compras más nuevas salgan primero
+            //Ordenamos para que las compras más nuevas salgan primero
             reservasEnriquecidas.sort((a, b) => new Date(b.reservationDate) - new Date(a.reservationDate));
             
             setReservas(reservasEnriquecidas);
@@ -53,7 +53,7 @@ const MisPaquetes = () => {
         }
     };
 
-    // Función para traducir y dar color al estado
+    //Función para traducir y dar color al estado
     const renderBadgeEstado = (status) => {
         switch (status) {
             case "CONFIRMED":

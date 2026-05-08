@@ -7,7 +7,7 @@ const DetallePaquete = () => {
     const { id } = useParams();
     const [paquete, setPaquete] = useState(null);
     
-    // Estados para el carrito y mensajes
+    //Estados para el carrito y mensajes
     const { addToCart } = useContext(CartContext);
     const [passengers, setPassengers] = useState(1); 
     const [mensajeExito, setMensajeExito] = useState(false);
@@ -23,24 +23,24 @@ const DetallePaquete = () => {
             });
     }, [id]);
 
-    // Función mejorada con alertas de error
+    //Función mejorada con alertas de error
     const handleAgregarCarrito = () => {
-        // 1. Validar que no sea menor o igual a 0
+        //Validar que no sea menor o igual a 0
         if (passengers <= 0) {
             setMensajeError("Debes seleccionar al menos 1 pasajero.");
             setTimeout(() => setMensajeError(""), 3500);
-            return; // Cortamos la ejecución aquí
+            return;
         }
 
-        // 2. Validar que no supere el límite de la base de datos
+        //Validar que no supere el límite de la base de datos
         if (passengers > paquete.availableQuotas) {
             setMensajeError(`¡Ups! Solo quedan ${paquete.availableQuotas} cupos disponibles para este paquete.`);
             setTimeout(() => setMensajeError(""), 3500);
-            return; // Cortamos la ejecución aquí
+            return;
         }
 
-        // 3. Si pasa las validaciones, agregamos al carrito
-        setMensajeError(""); // Limpiamos cualquier error previo
+        //Si pasa las validaciones, agregamos al carrito
+        setMensajeError("");
         addToCart(paquete, passengers);
         setMensajeExito(true);
         

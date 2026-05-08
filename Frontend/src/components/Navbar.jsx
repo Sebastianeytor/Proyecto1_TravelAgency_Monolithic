@@ -1,13 +1,12 @@
 import { Link } from "react-router-dom";
 import { useKeycloak } from "@react-keycloak/web";
-import { useContext } from "react"; // 1. Importamos el hook useContext
-import { CartContext } from "../context/CartContext"; // 2. Importamos nuestro Contexto
+import { useContext } from "react"; 
+import { CartContext } from "../context/CartContext"; 
 
 const Navbar = () => {
   const { keycloak, initialized } = useKeycloak();
   
-  // 3. Extraemos el carrito de nuestra "burbuja" global
-  const { cart } = useContext(CartContext);
+  const { cart, clearCart } = useContext(CartContext);
 
   if (!initialized) {
     return null; 
@@ -23,6 +22,14 @@ const Navbar = () => {
     }
   };
 
+  //Función que limpia el carrito y cierra sesión
+  const handleLogout = () => {
+    if (clearCart) {
+      clearCart(); //Se vacia la memoria del carrito
+    }
+    keycloak.logout(); //Se cierra la sesión en Keycloak
+  };
+
   return (
     <>
       {/* BARRA SUPERIOR */}
@@ -32,7 +39,7 @@ const Navbar = () => {
             <button className="btn btn-dark me-2 border-0" type="button" data-bs-toggle="offcanvas" data-bs-target="#menuLateral">
               <span className="fs-5">☰</span>
             </button>
-            <Link className="navbar-brand m-0" to="/">✈️ TravelAgency</Link>
+            <Link className="navbar-brand m-0" to="/"> TravelAgency</Link>
           </div>
           
           <div className="d-flex align-items-center">
@@ -56,7 +63,8 @@ const Navbar = () => {
                 {isLoggedIn ? (
                   <button 
                     className="btn btn-outline-danger d-flex align-items-center btn-sm py-2"
-                    onClick={() => keycloak.logout()}
+                    //Se cierra sesión y se limpia el carrito
+                    onClick={handleLogout}
                   >
                     <span className="me-2">👤</span> <span className="d-none d-sm-inline">Cerrar sesión</span>
                   </button>

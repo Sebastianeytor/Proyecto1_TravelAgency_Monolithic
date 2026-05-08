@@ -4,5 +4,6 @@ public enum PackageStatus {
     AVAILABLE,
     SOLD_OUT,
     EXPIRED,
-    CANCELLED
+    CANCELLED,
+    UNAVAILABLE
 }

@@ -1,6 +1,6 @@
 import { createContext, useState, useEffect } from "react";
 
-// 1. Creamos el Contexto (El "almacén" global)
+// 1. Creamos el Contexto
 export const CartContext = createContext();
 
 // 2. Creamos el Provider (El administrador que reparte los datos)
@@ -48,6 +48,7 @@ export const CartProvider = ({ children }) => {
     // Función para vaciar el carrito (¡Vital para cuando el pago sea exitoso!)
     const clearCart = () => {
         setCart([]);
+        localStorage.removeItem("cart");
     };
 
     // Entregamos las variables y funciones a toda la aplicación

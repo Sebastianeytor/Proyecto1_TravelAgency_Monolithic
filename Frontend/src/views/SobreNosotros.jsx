@@ -1,7 +1,7 @@
 const SobreNosotros = () => {
     return (
         <div className="container mt-5 mb-5">
-            {/* Cabecera / Hero Section */}
+            {/* Cabecera */}
             <div className="text-center mb-5">
                 <h1 className="display-4 fw-bold text-primary mb-3">Sobre Nosotros</h1>
                 <p className="lead text-muted mx-auto" style={{ maxWidth: '700px' }}>
@@ -40,7 +40,7 @@ const SobreNosotros = () => {
                 </div>
             </div>
 
-            {/* Sección de "Por qué elegirnos" (Pilares) */}
+            {/* Sección de "Por qué elegirnos"  */}
             <div className="text-center mt-5 pt-4 border-top">
                 <h3 className="fw-bold mb-5">¿Por qué viajar con nosotros?</h3>
                 <div className="row g-4">

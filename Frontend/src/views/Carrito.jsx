@@ -10,16 +10,16 @@ const Carrito = () => {
     const { keycloak } = useKeycloak();
     const navigate = useNavigate();
 
-    // Estados
+    //Estados
     const [dbUser, setDbUser] = useState(null);
     const [previews, setPreviews] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [step, setStep] = useState(1); // 1: Carrito, 2: Pago, 3: Éxito
+    const [step, setStep] = useState(1);
     
-    // Estado para el formulario de pago simulado
+    //Estado para el formulario de pago simulado
     const [paymentData, setPaymentData] = useState({ card: "", expiry: "", cvv: "" });
 
-    // 1. Cargar el ID interno del usuario desde la BD
+    //Cargar el ID interno del usuario desde la BD
     useEffect(() => {
         if (keycloak.tokenParsed) {
             userService.getByKeycloakId(keycloak.tokenParsed.sub)
@@ -28,7 +28,7 @@ const Carrito = () => {
         }
     }, [keycloak]);
 
-    // 2. Obtener Cotizaciones (Previews) de Java apenas cambia el carrito
+    //Obtener Cotizaciones de Java apenas cambia el carrito
     useEffect(() => {
         if (dbUser && cart.length > 0) {
             obtenerCotizaciones();
@@ -59,7 +59,7 @@ const Carrito = () => {
     const handleFinalizarCompra = async (e) => {
         e.preventDefault();
         try {
-            // Armamos el payload completo (Paquetes + Tarjeta)
+            //Armamos el payload completo (Paquetes + Tarjeta)
             const payload = {
                 userId: dbUser.id,
                 items: cart.map(item => ({
@@ -71,10 +71,10 @@ const Carrito = () => {
                 cvv: paymentData.cvv
             };
             
-            // Enviamos todo a Java
+            //Enviamos todo a Java
             await reservationService.checkoutCart(payload);
             clearCart();
-            setStep(3); // Ir a pantalla de "¡Pago Exitoso!"
+            setStep(3); //Ir a pantalla de "¡Pago Exitoso!"
         } catch (err) {
             alert("Hubo un error al procesar tu reserva: " + (err.response?.data || "Error de red"));
         }

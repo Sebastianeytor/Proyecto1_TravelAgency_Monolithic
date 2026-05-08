@@ -3,18 +3,18 @@ import { Link } from "react-router-dom";
 import tourPackageService from "../services/tourPackage.service";
 
 const Paquetes = () => {
-    // 1. LA CAJA FUERTE: Guarda los paquetes disponibles de la BD
+    //Guarda los paquetes disponibles de la BD
     const [paquetes, setPaquetes] = useState([]);
     
-    // 2. LA VITRINA: Lo que realmente ve el usuario en pantalla
+    //Lo que realmente ve el usuario en pantalla
     const [paquetesFiltrados, setPaquetesFiltrados] = useState([]);
 
-    // 3. ESTADOS DE LOS FILTROS (Sin el precioMax)
+    //Estados para los filtros
     const [busqueda, setBusqueda] = useState("");
     const [tipoViaje, setTipoViaje] = useState(""); 
     const [orden, setOrden] = useState("");
 
-    // Función que llama al servicio
+    //Función que llama al servicio
     const init = () => {
         tourPackageService.getAvailable()
             .then(response => {
@@ -27,16 +27,16 @@ const Paquetes = () => {
             });
     };
 
-    // Se ejecuta automáticamente al abrir la página
+    //Se ejecuta automáticamente al abrir la página
     useEffect(() => {
         init();
     }, []);
 
-    // 4. EL MOTOR DE FILTRADO (100% en Frontend)
+    //Cada vez que cambie un filtro, se ejecuta esta función para actualizar lo que ve el usuario
     useEffect(() => {
         let resultado = [...paquetes];
 
-        // Filtro por Texto (Busca en Name o Destination)
+        //Filtro por Texto
         if (busqueda) {
             resultado = resultado.filter(p => 
                 (p.name && p.name.toLowerCase().includes(busqueda.toLowerCase())) || 
@@ -44,19 +44,19 @@ const Paquetes = () => {
             );
         }
 
-        // Filtro por Tipo de Viaje (tripType)
+        //Filtro por Tipo de Viaje (tripType)
         if (tipoViaje) {
             resultado = resultado.filter(p => p.tripType === tipoViaje);
         }
 
-        // Ordenamiento por Precio
+        //Ordenamiento por Precio
         if (orden === "asc") {
             resultado.sort((a, b) => a.price - b.price);
         } else if (orden === "desc") {
             resultado.sort((a, b) => b.price - a.price);
         }
 
-        // Actualizamos la vitrina
+        //Actualizamos la vitrina
         setPaquetesFiltrados(resultado);
         
     }, [busqueda, tipoViaje, orden, paquetes]);
@@ -69,19 +69,19 @@ const Paquetes = () => {
             <div className="card shadow-sm mb-5 border-0 bg-light">
                 <div className="card-body">
                     <div className="row g-3">
-                        {/* Buscador (4 columnas) */}
+                        {/* Buscador */}
                         <div className="col-md-4">
                             <label className="form-label fw-bold">Buscar destino</label>
                             <input 
                                 type="text" 
                                 className="form-control" 
-                                placeholder="Ej. Playa, Montaña, Brasil..." 
+                                placeholder="Buscar..." 
                                 value={busqueda}
                                 onChange={(e) => setBusqueda(e.target.value)}
                             />
                         </div>
 
-                        {/* Tipo de Viaje (4 columnas) */}
+                        {/* Tipo de Viaje */}
                         <div className="col-md-4">
                             <label className="form-label fw-bold">Tipo de Viaje</label>
                             <select 
@@ -99,7 +99,7 @@ const Paquetes = () => {
                             </select>
                         </div>
 
-                        {/* Ordenar Por (4 columnas) */}
+                        {/* Ordenar Por */}
                         <div className="col-md-4">
                             <label className="form-label fw-bold">Ordenar por</label>
                             <select 
@@ -116,7 +116,7 @@ const Paquetes = () => {
                 </div>
             </div>
 
-            {/* LISTA DE PAQUETES (La Vitrina) */}
+            {/* LISTA DE PAQUETES */}
             <div className="row">
                 {paquetesFiltrados.length > 0 ? (
                     paquetesFiltrados.map((p) => (
