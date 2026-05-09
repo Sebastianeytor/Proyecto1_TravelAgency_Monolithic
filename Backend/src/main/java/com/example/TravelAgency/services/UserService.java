@@ -37,40 +37,37 @@ public class UserService {
             throw new IllegalArgumentException("El correo electrónico ya está registrado en el sistema.");
         }
 
-        // Validamos que el puente con Keycloak venga asegurado
+        //Validamos que el puente con Keycloak venga asegurado
         if (newUser.getKeycloakId() == null || newUser.getKeycloakId().isEmpty()) {
             throw new IllegalArgumentException("El ID de Keycloak es obligatorio para registrar un usuario.");
         }
 
         newUser.setRole(UserRole.CLIENT);
         newUser.setStatus(UserStatus.ACTIVE);
-        // Ya no seteamos los intentos fallidos porque Keycloak se encarga de eso
+        //Ya no seteamos los intentos fallidos porque Keycloak se encarga de eso
 
         return userRepository.save(newUser);
     }
 
     public UserEntity updateUser(Long id, UserEntity updatedData) {
-        // 1. Buscamos al usuario original
+        //Buscamos al usuario original
         UserEntity existingUser = userRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado con ID: " + id));
 
-        // 2. Actualizamos los campos de contacto y perfil que el usuario tiene permitido cambiar
+        //Actualizamos los campos de contacto y perfil que el usuario tiene permitido cambiar
         if (updatedData.getFullName() != null) existingUser.setFullName(updatedData.getFullName());
         if (updatedData.getRut() != null) existingUser.setRut(updatedData.getRut());
         if (updatedData.getPhone() != null) existingUser.setPhone(updatedData.getPhone());
         if (updatedData.getNationality() != null) existingUser.setNationality(updatedData.getNationality());
 
         if (updatedData.getEmail() != null) {
-            // Validar que el nuevo email no lo tenga otro usuario
+            //Validar que el nuevo email no lo tenga otro usuario
             if (!existingUser.getEmail().equals(updatedData.getEmail()) &&
                     userRepository.existsByEmail(updatedData.getEmail())) {
                 throw new IllegalArgumentException("El nuevo correo ya está en uso por otro usuario.");
             }
             existingUser.setEmail(updatedData.getEmail());
         }
-
-        // Los campos críticos (Role, Status y keycloakId) NO se tocan aquí
-        // para mantener la seguridad de la arquitectura intacta.
 
         return userRepository.save(existingUser);
     }
@@ -79,7 +76,7 @@ public class UserService {
         UserEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
 
-        // Si está activo, lo desactivamos. Si está inactivo, lo activamos.
+        //Si está activo, lo desactivamos. Si está inactivo, lo activamos.
         if (user.getStatus() == UserStatus.ACTIVE) {
             user.setStatus(UserStatus.INACTIVE);
         } else {
