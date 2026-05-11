@@ -9,6 +9,4 @@ import java.util.List;
 @Repository
 public interface PaymentRepository extends JpaRepository<PaymentEntity, Long> {
 
-    List<PaymentEntity> findByReservationId(Long reservationId);
-
 }
