@@ -20,17 +20,15 @@ services:
       KEYCLOAK_ADMIN_PASSWORD: admin
       KC_HOSTNAME_STRICT: "false"
     ports:
-      - "9090:8080" # Tu PC lo ve en el 9090, Docker lo entrega al 8080 interno
+      - "9090:8080" 
     volumes:
       - ./keycloak_data:/opt/keycloak/data
     depends_on:
       - db
 
-  backend:
+  travel-backend-1:
     image: sebastianvasnormandy/travel-backend:latest
-    container_name: travel-backend
-    ports:
-      - "8088:8088" # Tu puerto original del Backend
+    container_name: travel-backend-1
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/travel_agency
       SPRING_DATASOURCE_USERNAME: user
@@ -40,10 +38,68 @@ services:
       - db
       - keycloak
 
-  frontend:
-    image: sebastianvasnormandy/travel-frontend:latest
-    container_name: travel-frontend
-    ports:
-      - "8070:80"
+  travel-backend-2:
+    image: sebastianvasnormandy/travel-backend:latest
+    container_name: travel-backend-2
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/travel_agency
+      SPRING_DATASOURCE_USERNAME: user
+      SPRING_DATASOURCE_PASSWORD: password
+      KEYCLOAK_AUTH_SERVER_URL: http://keycloak:8080
     depends_on:
-      - backend
+      - db
+      - keycloak
+
+  travel-backend-3:
+    image: sebastianvasnormandy/travel-backend:latest
+    container_name: travel-backend-3
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/travel_agency
+      SPRING_DATASOURCE_USERNAME: user
+      SPRING_DATASOURCE_PASSWORD: password
+      KEYCLOAK_AUTH_SERVER_URL: http://keycloak:8080
+    depends_on:
+      - db
+      - keycloak
+
+  nginx-backend:
+    image: nginx:latest
+    container_name: nginx-backend
+    ports:
+      - "8088:80" # Nginx expone el 8088 al exterior
+    volumes:
+      - ./nginx-backend.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - travel-backend-1
+      - travel-backend-2
+      - travel-backend-3
+
+  travel-frontend-1:
+    image: sebastianvasnormandy/travel-frontend:latest
+    container_name: travel-frontend-1
+    depends_on:
+      - nginx-backend
+
+  travel-frontend-2:
+    image: sebastianvasnormandy/travel-frontend:latest
+    container_name: travel-frontend-2
+    depends_on:
+      - nginx-backend
+
+  travel-frontend-3:
+    image: sebastianvasnormandy/travel-frontend:latest
+    container_name: travel-frontend-3
+    depends_on:
+      - nginx-backend
+
+  nginx-frontend:
+    image: nginx:latest
+    container_name: nginx-frontend
+    ports:
+      - "8070:80" # Nginx expone el 8070 al exterior
+    volumes:
+      - ./nginx-frontend.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - travel-frontend-1
+      - travel-frontend-2
+      - travel-frontend-3
