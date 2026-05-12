@@ -2,8 +2,8 @@ name: CI/CD Pipeline TravelAgency
 
 on:
   push:
-    branches: [ "main" ] # Se ejecuta al hacer push a la rama main
-  workflow_dispatch: # Permite ejecutarlo con un botón manualmente
+    branches: [ "main" ]
+  workflow_dispatch:
 
 jobs:
   build-test-and-push:
@@ -13,32 +13,43 @@ jobs:
     - name: 1. Descargar el código fuente
       uses: actions/checkout@v3
 
-    - name: 2. Configurar Java JDK (Para el Backend)
+    - name: 2. Configurar Java JDK 21
       uses: actions/setup-java@v3
       with:
-        java-version: '21' 
+        java-version: '21'
         distribution: 'temurin'
         cache: maven
 
-    - name: 3. Ejecutar Pruebas Unitarias del Backend
+    - name: 3. Pruebas Unitarias y Empaquetar Backend (.jar)
       run: |
         cd Backend
-        mvn clean test
+        mvn clean package
 
-    - name: 4. Iniciar sesión en Docker Hub
+    - name: 4. Configurar Node.js (Para el Frontend)
+      uses: actions/setup-node@v3
+      with:
+        node-version: '20'
+
+    - name: 5. Construir el Frontend (dist)
+      run: |
+        cd Frontend
+        npm install
+        npm run build
+
+    - name: 6. Iniciar sesión en Docker Hub
       uses: docker/login-action@v2
       with:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-    - name: 5. Construir y Subir Imagen Backend
+    - name: 7. Construir y Subir Imagen Backend
       uses: docker/build-push-action@v4
       with:
         context: ./Backend
         push: true
         tags: ${{ secrets.DOCKERHUB_USERNAME }}/travel-backend:latest
 
-    - name: 6. Construir y Subir Imagen Frontend
+    - name: 8. Construir y Subir Imagen Frontend
       uses: docker/build-push-action@v4
       with:
         context: ./Frontend
