@@ -39,11 +39,9 @@ public class ReservationEntity {
     @Column(nullable = false)
     private ReservationStatus status;
 
-    // Relación "suelta" pensada para microservicios
     @Column(nullable = false)
     private Long userId;
 
-    // Relación "suelta" pensada para microservicios
     @Column(nullable = false)
     private Long tourPackageId;
 }

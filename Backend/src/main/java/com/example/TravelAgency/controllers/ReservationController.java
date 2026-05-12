@@ -25,7 +25,7 @@ public class ReservationController {
 
     private final ReservationService reservationService;
 
-    // Recibimos solo 3 datos
+    //Recibimos solo 3 datos
     @Data
     public static class ReservationRequest {
         private Long userId;
@@ -33,14 +33,13 @@ public class ReservationController {
         private Integer passengers;
     }
 
-    // 📦 El "Sobre" que le enviaremos a React con la cotización
     @Data
     @Builder
     public static class ReservationPreviewResponse {
         private BigDecimal basePrice;
         private BigDecimal discountAmount;
         private BigDecimal finalAmount;
-        private String appliedDiscounts; // Ej: "Descuento por Grupo (10%), Cliente Frecuente (5%)"
+        private String appliedDiscounts;
     }
 
     @Data
@@ -78,7 +77,7 @@ public class ReservationController {
         private BigDecimal totalRevenue;
     }
 
-    // 🔵 CLIENTE: Solo alguien con cuenta puede reservar un viaje.
+    //Solo alguien con cuenta puede reservar un viaje.
     @PostMapping
     @PreAuthorize("hasRole('CLIENT')")
     public ResponseEntity<?> createReservation(@RequestBody ReservationRequest request) {
@@ -96,7 +95,7 @@ public class ReservationController {
         }
     }
 
-    // 🔵 CLIENTE: Cotizar antes de comprar (Requisito Épica 4)
+    //Cotizar antes de comprar
     @PostMapping("/preview")
     @PreAuthorize("hasRole('CLIENT')")
     public ResponseEntity<?> previewReservation(@RequestBody ReservationRequest request) {

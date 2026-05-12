@@ -29,8 +29,6 @@ public class PaymentController {
         private String cvv;
     }
 
-    // 🔵 CLIENTE: Exigimos que quien pague sea un usuario registrado en Keycloak con rol de cliente.
-    // Nadie anónimo puede inyectar pagos al sistema.
     @PostMapping("/process")
     @PreAuthorize("hasRole('CLIENT')")
     public ResponseEntity<?> processPayment(@RequestBody PaymentRequest request) {

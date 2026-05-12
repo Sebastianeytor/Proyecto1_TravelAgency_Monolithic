@@ -1,0 +1,49 @@
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: travel-db
+    environment:
+      POSTGRES_DB: travel_agency
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:22.0.1
+    container_name: travel-keycloak
+    command: start-dev
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_HOSTNAME_STRICT: "false"
+    ports:
+      - "9090:8080" # Tu PC lo ve en el 9090, Docker lo entrega al 8080 interno
+    volumes:
+      - ./keycloak_data:/opt/keycloak/data
+    depends_on:
+      - db
+
+  backend:
+    image: sebastianvasnormandy/travel-backend:latest
+    container_name: travel-backend
+    ports:
+      - "8088:8088" # Tu puerto original del Backend
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/travel_agency
+      SPRING_DATASOURCE_USERNAME: user
+      SPRING_DATASOURCE_PASSWORD: password
+      KEYCLOAK_AUTH_SERVER_URL: http://keycloak:8080
+    depends_on:
+      - db
+      - keycloak
+
+  frontend:
+    image: sebastianvasnormandy/travel-frontend:latest
+    container_name: travel-frontend
+    ports:
+      - "8070:80"
+    depends_on:
+      - backend

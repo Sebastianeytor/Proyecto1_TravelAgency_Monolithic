@@ -37,7 +37,7 @@ public class ReservationService {
     private static final BigDecimal GROUP_DISCOUNT_RATE = new BigDecimal("0.10");
     //Descuento del 5% (cliente frecuente)
     private static final BigDecimal FREQUENT_CLIENT_DISCOUNT_RATE = new BigDecimal("0.05");
-    // Descuento del 5% (Múltiples Paquetes)
+    //Descuento del 5% (Múltiples Paquetes)
     private static final BigDecimal MULTIPLE_PACKAGES_DISCOUNT_RATE = new BigDecimal("0.05");
     private static final int GROUP_MIN_PASSENGERS = 4;
     private static final int FREQUENT_CLIENT_MIN_RESERVATIONS = 3;
@@ -50,12 +50,9 @@ public class ReservationService {
         return reservationRepository.findByUserId(userId);
     }
 
-    // =========================================================
-    // MOTOR DE COTIZACIÓN (Preview sin guardar en BD)
-    // =========================================================
     public ReservationController.ReservationPreviewResponse previewReservation(Long userId, Long packageId, Integer passengers, boolean isMultiplePackages) {
 
-        // 1. Validaciones básicas
+        //Validaciones básicas
         if (passengers == null || passengers <= 0) {
             throw new IllegalArgumentException("La cantidad de pasajeros debe ser mayor a cero.");
         }
@@ -70,12 +67,12 @@ public class ReservationService {
             throw new IllegalArgumentException("No hay suficientes cupos disponibles (" + tourPackage.getAvailableQuotas() + " restantes).");
         }
 
-        // 2. Cálculo Base
+        //Cálculo Base
         BigDecimal basePrice = tourPackage.getPrice().multiply(new BigDecimal(passengers));
         BigDecimal totalDiscountPercentage = BigDecimal.ZERO;
         List<String> discountDetails = new ArrayList<>();
 
-        // 3. Reglas Comerciales (Descuentos)
+        //Reglas Comerciales (Descuentos)
         if (passengers >= GROUP_MIN_PASSENGERS) {
             totalDiscountPercentage = totalDiscountPercentage.add(GROUP_DISCOUNT_RATE);
             discountDetails.add("Descuento por Grupo (" + (GROUP_DISCOUNT_RATE.multiply(new BigDecimal("100")).intValue()) + "%)");
@@ -90,7 +87,7 @@ public class ReservationService {
             discountDetails.add("Cliente Frecuente (" + (FREQUENT_CLIENT_DISCOUNT_RATE.multiply(new BigDecimal("100")).intValue()) + "%)");
         }
 
-        // Descuento por Múltiples Paquetes en la misma sesión
+        //Descuento por Múltiples Paquetes en la misma sesión
         if (isMultiplePackages) {
             totalDiscountPercentage = totalDiscountPercentage.add(MULTIPLE_PACKAGES_DISCOUNT_RATE);
             discountDetails.add("Múltiples Paquetes (" + (MULTIPLE_PACKAGES_DISCOUNT_RATE.multiply(new BigDecimal("100")).intValue()) + "%)");
@@ -101,14 +98,13 @@ public class ReservationService {
             discountDetails.add("Tope Máximo de Descuento (20%)");
         }
 
-        // 4. Matemáticas Finales
         BigDecimal discountAmount = basePrice.multiply(totalDiscountPercentage).setScale(0, RoundingMode.HALF_UP);
         BigDecimal finalAmount = basePrice.subtract(discountAmount).setScale(0, RoundingMode.HALF_UP);
 
-        // Si no hubo descuentos, mandamos un mensaje claro
+        //Si no hubo descuentos, mandamos un mensaje claro
         String appliedDiscountsStr = discountDetails.isEmpty() ? "Sin descuentos aplicables" : String.join(" + ", discountDetails);
 
-        // 5. Devolvemos el sobre cerrado sin tocar la base de datos
+        //Devolvemos el sobre cerrado sin tocar la base de datos
         return ReservationController.ReservationPreviewResponse.builder()
                 .basePrice(basePrice)
                 .discountAmount(discountAmount)
@@ -163,7 +159,7 @@ public class ReservationService {
             discountDetails.add("Descuento Cliente Frecuente (" + (FREQUENT_CLIENT_DISCOUNT_RATE.multiply(new BigDecimal("100"))) + "%)");
         }
 
-        // Descuento por Múltiples Paquetes en la misma sesión
+        //Descuento por Múltiples Paquetes en la misma sesión
         if (isMultiplePackages) {
             totalDiscountPercentage = totalDiscountPercentage.add(MULTIPLE_PACKAGES_DISCOUNT_RATE);
             discountDetails.add("Múltiples Paquetes (" + (MULTIPLE_PACKAGES_DISCOUNT_RATE.multiply(new BigDecimal("100")).intValue()) + "%)");
@@ -182,7 +178,7 @@ public class ReservationService {
         //Descontar cupos del paquete turístico
         tourPackage.setAvailableQuotas(tourPackage.getAvailableQuotas() - passengers);
         if (tourPackage.getAvailableQuotas() == 0) {
-            tourPackage.setStatus(PackageStatus.SOLD_OUT); // Regla: Cambiar estado si se agotan
+            tourPackage.setStatus(PackageStatus.SOLD_OUT); //Cambiar estado si se agotan
         }
         tourPackageRepository.save(tourPackage);
 
@@ -191,7 +187,7 @@ public class ReservationService {
                 .userId(userId)
                 .tourPackageId(packageId)
                 .passengerQuantity(passengers)
-                .reservationDate(LocalDateTime.now()) // Fecha y hora exacta actual
+                .reservationDate(LocalDateTime.now()) //Fecha y hora exacta actual
                 .totalAmount(finalAmount)
                 .appliedDiscounts(String.join(", ", discountDetails)) // Guardar transparencia de descuentos
                 .status(ReservationStatus.PENDING_PAYMENT)
@@ -200,17 +196,14 @@ public class ReservationService {
         return reservationRepository.save(reservation);
     }
 
-    // =========================================================
-// PROCESAMIENTO BATCH (CARRITO COMPLETO)
-// =========================================================
 
     public List<ReservationController.ReservationPreviewResponse> previewCart(Long userId, List<ReservationController.CartItemDto> items) {
-        // ¿Lleva más de 1 paquete distinto en el carrito?
+        //Lleva más de 1 paquete distinto en el carrito
         boolean isMultiple = items.size() > 1;
 
         List<ReservationController.ReservationPreviewResponse> responses = new ArrayList<>();
         for (ReservationController.CartItemDto item : items) {
-            // Llamamos a tu método de preview pasándole el booleano
+            //Llamamos a tu metodo de preview pasándole el booleano
             responses.add(previewReservation(userId, item.getPackageId(), item.getPassengers(), isMultiple));
         }
         return responses;
@@ -222,10 +215,10 @@ public class ReservationService {
         List<ReservationEntity> confirmedReservations = new ArrayList<>();
 
         for (ReservationController.CartItemDto item : items) {
-            // 1. Creamos la reserva inicial (Queda guardada como PENDING_PAYMENT y descuenta los cupos)
+            //Creamos la reserva inicial (Queda guardada como PENDING_PAYMENT y descuenta los cupos)
             ReservationEntity reservation = createReservation(userId, item.getPackageId(), item.getPassengers(), isMultiple);
 
-            // 2. Llamamos a tu PaymentService brillante para procesar el pago de esta reserva
+            //Llamamos a PaymentService para procesar el pago de esta reserva
             paymentService.processSimulatedPayment(
                     reservation.getId(),
                     reservation.getTotalAmount(),
@@ -234,7 +227,7 @@ public class ReservationService {
                     cvv
             );
 
-            // 3. Recuperamos la reserva actualizada de la base de datos (ahora con estado CONFIRMED)
+            //Recuperamos la reserva actualizada de la base de datos
             confirmedReservations.add(reservationRepository.findById(reservation.getId()).get());
         }
 
@@ -260,7 +253,7 @@ public class ReservationService {
     }
 
     public List<ReservationController.PackageRankingDto> getPackageRanking(LocalDateTime start, LocalDateTime end) {
-        // Agrupamos reservas por paquete en el rango de fechas
+        //Agrupamos reservas por paquete en el rango de fechas
         return reservationRepository.findAll().stream()
                 .filter(r -> r.getStatus() == ReservationStatus.CONFIRMED)
                 .filter(r -> r.getReservationDate().isAfter(start) && r.getReservationDate().isBefore(end))

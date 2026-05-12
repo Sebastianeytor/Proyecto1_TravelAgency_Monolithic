@@ -31,7 +31,6 @@ public class PaymentEntity {
     @Column(length = 30, nullable = false)
     private String paymentMethod;
 
-    // Relación "suelta" hacia la reserva
     @Column(nullable = false)
     private Long reservationId;
 }

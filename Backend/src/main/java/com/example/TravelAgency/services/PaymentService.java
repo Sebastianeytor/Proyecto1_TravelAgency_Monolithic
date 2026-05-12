@@ -45,16 +45,14 @@ public class PaymentService {
             throw new IllegalArgumentException("El pago debe corresponder al monto total exacto de la reserva (" + reservation.getTotalAmount() + "). No se aceptan pagos parciales.");
         }
 
-        // 3. Simulación de cobro a la tarjeta
-        // Recibimos cardNumber, expiryDate y cvv desde el frontend (React) para simular la pasarela,
-        // pero POR SEGURIDAD jamás los guardamos en la base de datos. Asumimos que el "banco" aprobó.
+        //Simulación de cobro a la tarjeta
 
-        // 4. Crear y guardar el comprobante de pago
+        //Crear y guardar el comprobante de pago
         PaymentEntity payment = PaymentEntity.builder()
                 .reservationId(reservationId)
-                .paymentDate(LocalDateTime.now()) // Registra el momento exacto del pago
+                .paymentDate(LocalDateTime.now()) //Registra el momento exacto del pago
                 .amount(amountToPay)
-                .paymentMethod("SIMULATED_CREDIT_CARD") // Texto requerido para la simulación
+                .paymentMethod("SIMULATED_CREDIT_CARD") //Texto requerido para la simulación
                 .build();
 
         paymentRepository.save(payment);

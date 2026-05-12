@@ -44,11 +44,11 @@ public class TourPackageService {
 
     @Transactional
     public TourPackageEntity updatePackage(Long id, TourPackageEntity updatedData) {
-        // 1. Buscamos si el paquete existe
+        //Buscamos si el paquete existe
         TourPackageEntity existingPackage = tourPackageRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Paquete turístico no encontrado."));
 
-        // 2. Actualizamos todos los campos
+        //Actualizamos todos los campos
         existingPackage.setName(updatedData.getName());
         existingPackage.setDestination(updatedData.getDestination());
         existingPackage.setDescription(updatedData.getDescription());
@@ -61,14 +61,13 @@ public class TourPackageService {
         existingPackage.setIncludedServices(updatedData.getIncludedServices());
         existingPackage.setConditions(updatedData.getConditions());
 
-        // ¡Ojo aquí con la R mayúscula de tu entidad! Lombok suele generar el setter así:
         existingPackage.setRestrictions(updatedData.getRestrictions());
 
         existingPackage.setTripType(updatedData.getTripType());
         existingPackage.setSeason(updatedData.getSeason());
         existingPackage.setStatus(updatedData.getStatus());
 
-        // 3. Guardamos los cambios en PostgreSQL
+        //Guardamos los cambios en PostgreSQL
         return tourPackageRepository.save(existingPackage);
     }
 

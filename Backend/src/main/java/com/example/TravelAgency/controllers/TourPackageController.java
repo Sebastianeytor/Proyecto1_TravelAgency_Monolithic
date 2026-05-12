@@ -26,7 +26,7 @@ public class TourPackageController {
         return new ResponseEntity<>(packages, HttpStatus.OK);
     }
 
-    // 🔴 ADMIN: Solo el administrador puede crear paquetes
+    //Solo el administrador puede crear paquetes
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> createPackage(@RequestBody TourPackageEntity newPackage) {
@@ -74,7 +74,7 @@ public class TourPackageController {
         }
     }
 
-    // 🔴 ADMIN: Solo el administrador puede cambiar el estado de un paquete
+    //Solo el administrador puede cambiar el estado de un paquete
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> changePackageStatus(@PathVariable Long id, @RequestParam PackageStatus newStatus) {
